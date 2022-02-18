@@ -1,12 +1,15 @@
-import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Tbody, Td, Th, Thead, Tr, Text, useBreakpointValue, Spinner } from "@chakra-ui/react";
-import Link from "next/link";
+import { Link, Box, Button, Checkbox, Flex, Heading, Icon, Table, Tbody, Td, Th, Thead, Tr, Text, useBreakpointValue, Spinner } from "@chakra-ui/react";
+import NextLink from "next/link";
 import { useState } from "react";
 
 import { RiAddLine } from "react-icons/ri";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import { Sidebar } from "../../components/Sidebar";
+import { api } from "../../services/api";
 import { useUsers } from "../../services/hook/useUsers";
+
+import {queryClient} from '../../services/queryClient';
 
 export default function UserList() {
     const[page, setPage] = useState(1);
@@ -16,6 +19,16 @@ export default function UserList() {
         base: false,
         lg: true,
     })
+
+    async function handlePreferchUser (userId: number) {
+        await queryClient.prefetchQuery(['user', userId], async () => {
+            const response = await api.get(`/users,${userId}`)
+
+            return response.data
+        }, {
+            staleTime: 1000 * 60 * 10, //10min
+        })
+    }
 
     return(
         <Box>
@@ -30,7 +43,7 @@ export default function UserList() {
                             Usuários
                             {!isLoading && isFetching && <Spinner size='sm' color='gray.500' ml='4' />}
                         </Heading>
-                        <Link href="/users/creat" passHref>
+                        <NextLink href="/users/creat" passHref>
                             <Button
                             as="a"
                             size="sm"
@@ -39,7 +52,7 @@ export default function UserList() {
                             leftIcon={<Icon as={RiAddLine} fontSize="20"/>}>
                                 Criar novo
                             </Button>
-                        </Link>
+                        </NextLink>
                     </Flex>
 
                     {isLoading ? (
@@ -56,7 +69,7 @@ export default function UserList() {
                             <Thead>
                                 <Tr>
                                     <Th px={["4", "4", "6"]} color="gray.300" width="8">
-                                    <Checkbox colorScheme="pink" /> 
+                                        <Checkbox colorScheme="pink" /> 
                                     </Th>
                                     <Th> Usuário</Th>
                                     {isWideVersion && <Th>Data de cadastro</Th>}
@@ -72,7 +85,11 @@ export default function UserList() {
                                             </Td>
                                             <Td>
                                                 <Box>
-                                                    <Text fontWeight="bold">{user.name}</Text>
+                                                    <Link
+                                                      color='purple.400'
+                                                      onMouseEnter={() => handlePreferchUser(user.id)}>
+                                                        <Text fontWeight="bold">{user.name}</Text>
+                                                    </Link>
                                                     <Text fontSize="sm" color="gray.300">{user.email}</Text>
                                                 </Box>
                                             </Td>
